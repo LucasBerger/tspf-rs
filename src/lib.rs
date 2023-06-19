@@ -28,6 +28,7 @@ pub use tsp::Point;
 pub use tsp::Tsp;
 pub use tsp::TspBuilder;
 pub use tsp::TspKind;
+pub use tsp::TspSerializer;
 pub use tsp::WeightFormat;
 pub use tsp::WeightKind;
 
