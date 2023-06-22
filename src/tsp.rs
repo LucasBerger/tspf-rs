@@ -1323,8 +1323,9 @@ impl_disp_enum!(DisplayKind);
 
 fn camel_to_snake(str: String) -> String {
     str.chars()
-        .flat_map(|c| {
-            if c.is_uppercase() {
+    .enumerate()
+        .flat_map(|(i,c)| {
+            if c.is_uppercase() && i != 0 {
                 vec!['_', c.to_lowercase().next().unwrap()]
             } else {
                 vec![c]
@@ -1432,7 +1433,7 @@ impl TspSerializer {
                 .iter()
                 .map(|x| {
                     format!(
-                        "{} {}\n",
+                        "{} {}",
                         x.0,
                         match x
                             .1
@@ -1515,6 +1516,7 @@ impl TspSerializer {
                 return Err(ParseTspError::Other("Hello"));
             }
         };
+        writer.flush()?;
         is_ok
     }
 }
