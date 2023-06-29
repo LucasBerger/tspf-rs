@@ -1336,187 +1336,198 @@ fn camel_to_snake(str: String) -> String {
 pub struct TspSerializer {}
 
 impl TspSerializer {
-    pub fn serialize_file(tsp: &Tsp, path: String) -> Result<(), ParseTspError> {
+    pub fn serialize_file(tsp: &Tsp, path: String) -> Result<File, ParseTspError> {
+
+
         let mut is_ok: Result<(), ParseTspError> = Ok(());
-        let output_file = match File::create(path) {
+        
+        {
+        let write_file = match File::create(&path) {
             Ok(file) => file,
             _ => {
                 return Err(ParseTspError::Other("error writing"));
             }
         };
-        let mut writer = std::io::BufWriter::new(output_file);
+            let mut writer = std::io::BufWriter::new(&write_file);
 
-        match writeln!(writer, "NAME: {}", tsp.name()) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(writer, "TYPE: {}", tsp.kind().to_string().to_uppercase()) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(writer, "COMMENT: {}", tsp.comment()) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(writer, "DIMENSION: {}", tsp.dim()) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(writer, "CAPACITY: {}", tsp.capacity()) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(
-            writer,
-            "EDGE_WEIGHT_TYPE: {}",
-            camel_to_snake(tsp.weight_kind().to_string()).to_uppercase()
-        ) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(
-            writer,
-            "EDGE_WEIGHT_FORMAT: {}",
-            camel_to_snake(tsp.weight_format().to_string()).to_uppercase()
-        ) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(
-            writer,
-            "EDGE_DATA_FORMAT: {}",
-            camel_to_snake(tsp.edge_format().to_string()).to_uppercase()
-        ) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(
-            writer,
-            "NODE_COORD_TYPE: {}",
-            camel_to_snake(tsp.coord_kind().to_string()).to_uppercase()
-        ) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
-        match writeln!(
-            writer,
-            "DISP_DATA_TYPE: {}",
-            camel_to_snake(tsp.disp_kind().to_string()).to_uppercase()
-        ) {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
-            }
-        };
+            match writeln!(writer, "NAME: {}", tsp.name()) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
 
-        if tsp.coord_kind() != CoordKind::NoCoord {
-            let data = match tsp
-                .node_coords()
-                .iter()
-                .map(|x| {
-                    format!(
-                        "{} {}",
-                        x.0,
-                        match x
-                            .1
-                            .pos()
-                            .iter()
-                            .map(|c| c.to_string())
-                            .reduce(|t, c| format!("{} {}", t, c))
-                        {
-                            Some(d) => d,
-                            _ => {
-                                is_ok = Err(ParseTspError::Other("error writing"));
-                                String::from("")
+            match writeln!(writer, "COMMENT: {}", tsp.comment()) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            match writeln!(writer, "TYPE: {}", tsp.kind().to_string().to_uppercase()) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            match writeln!(writer, "DIMENSION: {}", tsp.dim()) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            match writeln!(writer, "CAPACITY: {}", tsp.capacity()) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            match writeln!(
+                writer,
+                "EDGE_WEIGHT_TYPE: {}",
+                camel_to_snake(tsp.weight_kind().to_string()).to_uppercase()
+            ) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            match writeln!(
+                writer,
+                "EDGE_WEIGHT_FORMAT: {}",
+                camel_to_snake(tsp.weight_format().to_string()).to_uppercase()
+            ) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            match writeln!(
+                writer,
+                "EDGE_DATA_FORMAT: {}",
+                camel_to_snake(tsp.edge_format().to_string()).to_uppercase()
+            ) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            match writeln!(
+                writer,
+                "NODE_COORD_TYPE: {}",
+                camel_to_snake(tsp.coord_kind().to_string()).to_uppercase()
+            ) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            match writeln!(
+                writer,
+                "DISP_DATA_TYPE: {}",
+                camel_to_snake(tsp.disp_kind().to_string()).to_uppercase()
+            ) {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+
+            if tsp.coord_kind() != CoordKind::NoCoord {
+                let data = match tsp
+                    .node_coords()
+                    .iter()
+                    .map(|x| {
+                        format!(
+                            "{} {}",
+                            x.0,
+                            match x
+                                .1
+                                .pos()
+                                .iter()
+                                .map(|c| c.to_string())
+                                .reduce(|t, c| format!("{} {}", t, c))
+                            {
+                                Some(d) => d,
+                                _ => {
+                                    is_ok = Err(ParseTspError::Other("error writing"));
+                                    String::from("")
+                                }
                             }
-                        }
-                    )
-                })
-                .reduce(|str, poi| format!("{}\n{}", str, poi))
-            {
-                Some(data) => data,
-                _ => {
-                    return Err(ParseTspError::Other("error writing"));
-                }
-            };
-            match writeln!(writer, "NODE_COORD_SECTION: \n{}", data) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-        }
-
-        if tsp.kind() == TspKind::Cvrp {
-            match writeln!(
-                writer,
-                "DEPOT_SECTION: \n{}\n-1",
-                match tsp
-                    .depots()
-                    .iter()
-                    .map(|i| i.to_string())
-                    .reduce(|str, i| format!("{}\n{}", str, i))
+                        )
+                    })
+                    .reduce(|str, poi| format!("{}\n{}", str, poi))
                 {
                     Some(data) => data,
                     _ => {
                         return Err(ParseTspError::Other("error writing"));
                     }
-                }
-            ) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-        }
-
-        if tsp.kind() == TspKind::Cvrp {
-            match writeln!(
-                writer,
-                "DEMAND_SECTION: \n{}",
-                match tsp
-                    .demands()
-                    .iter()
-                    .map(|(i, d)| format!("{} {}", i, d))
-                    .reduce(|str, id| format!("{}\n{}", str, id))
-                {
-                    Some(data) => data,
+                };
+                match writeln!(writer, "NODE_COORD_SECTION: \n{}", data) {
+                    Ok(_) => (),
                     _ => {
-                        return Err(ParseTspError::Other("error writing"));
+                        return Err(ParseTspError::Other("Hello"));
                     }
-                }
-            ) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-        }
-        match writeln!(writer, "EOF") {
-            Ok(_) => (),
-            _ => {
-                return Err(ParseTspError::Other("Hello"));
+                };
             }
-        };
-        writer.flush()?;
-        is_ok
+
+            if tsp.kind() == TspKind::Cvrp {
+                match writeln!(
+                    writer,
+                    "DEPOT_SECTION: \n{}\n-1",
+                    match tsp
+                        .depots()
+                        .iter()
+                        .map(|i| i.to_string())
+                        .reduce(|str, i| format!("{}\n{}", str, i))
+                    {
+                        Some(data) => data,
+                        _ => {
+                            return Err(ParseTspError::Other("error writing"));
+                        }
+                    }
+                ) {
+                    Ok(_) => (),
+                    _ => {
+                        return Err(ParseTspError::Other("Hello"));
+                    }
+                };
+            }
+
+            if tsp.kind() == TspKind::Cvrp {
+                match writeln!(
+                    writer,
+                    "DEMAND_SECTION: \n{}",
+                    match tsp
+                        .demands()
+                        .iter()
+                        .map(|(i, d)| format!("{} {}", i, d))
+                        .reduce(|str, id| format!("{}\n{}", str, id))
+                    {
+                        Some(data) => data,
+                        _ => {
+                            return Err(ParseTspError::Other("error writing"));
+                        }
+                    }
+                ) {
+                    Ok(_) => (),
+                    _ => {
+                        return Err(ParseTspError::Other("Hello"));
+                    }
+                };
+            }
+            match writeln!(writer, "EOF") {
+                Ok(_) => (),
+                _ => {
+                    return Err(ParseTspError::Other("Hello"));
+                }
+            };
+            writer.flush()?;
+        }
+
+        if let Err(e) = is_ok {
+            Err(e)
+        } else {
+            File::open(path).map_err(|_| ParseTspError::Other("Hello") )
+        }
     }
 }
