@@ -3,7 +3,7 @@ use std::{
     convert::TryFrom,
     fmt::Display,
     fs::File,
-    io::{BufRead, BufReader, Write},
+    io::{BufRead, BufReader, Write, Result as IOResult},
     path::Path,
 };
 
@@ -1325,7 +1325,7 @@ fn camel_to_snake(str: String) -> String {
     str.chars()
     .enumerate()
         .flat_map(|(i,c)| {
-            if c.is_uppercase() && i != 0 {
+            if (c.is_numeric() || c.is_uppercase()) && i != 0 {
                 vec!['_', c.to_lowercase().next().unwrap()]
             } else {
                 vec![c]
@@ -1341,96 +1341,75 @@ impl TspSerializer {
 
         let mut is_ok: Result<(), ParseTspError> = Ok(());
         
-        {
-        let write_file = match File::create(&path) {
-            Ok(file) => file,
-            _ => {
-                return Err(ParseTspError::Other("error writing"));
-            }
-        };
+        match {
+            let write_file = match File::create(&path) {
+                Ok(file) => file,
+                _ => {
+                    return Err(ParseTspError::Other("error writing"));
+                }
+            };
             let mut writer = std::io::BufWriter::new(&write_file);
 
-            match writeln!(writer, "NAME: {}", tsp.name()) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
+            writeln!(writer, "NAME: {}", tsp.name())?;
 
-            match writeln!(writer, "COMMENT: {}", tsp.comment()) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-            match writeln!(writer, "TYPE: {}", tsp.kind().to_string().to_uppercase()) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-            match writeln!(writer, "DIMENSION: {}", tsp.dim()) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-            match writeln!(writer, "CAPACITY: {}", tsp.capacity()) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-            match writeln!(
-                writer,
-                "EDGE_WEIGHT_TYPE: {}",
-                camel_to_snake(tsp.weight_kind().to_string()).to_uppercase()
-            ) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-            match writeln!(
-                writer,
-                "EDGE_WEIGHT_FORMAT: {}",
-                camel_to_snake(tsp.weight_format().to_string()).to_uppercase()
-            ) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-            match writeln!(
-                writer,
-                "EDGE_DATA_FORMAT: {}",
-                camel_to_snake(tsp.edge_format().to_string()).to_uppercase()
-            ) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-            match writeln!(
-                writer,
-                "NODE_COORD_TYPE: {}",
-                camel_to_snake(tsp.coord_kind().to_string()).to_uppercase()
-            ) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
-            match writeln!(
-                writer,
-                "DISP_DATA_TYPE: {}",
-                camel_to_snake(tsp.disp_kind().to_string()).to_uppercase()
-            ) {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
+            writeln!(writer, "TYPE: {}", tsp.kind().to_string().to_uppercase())?;
+            writeln!(writer, "COMMENT: {}", tsp.comment())?;
+            writeln!(writer, "DIMENSION: {}", tsp.dim())?;
+            writeln!(writer, "CAPACITY: {}", tsp.capacity())?;
+
+            if tsp.weight_kind() != WeightKind::Undefined {
+                let weight_kind = match tsp.weight_kind() {
+                    WeightKind::Xray1 => String::from("XRAY1"),
+                    WeightKind::Xray2 => String::from("XRAY2"),
+                    _ => camel_to_snake(tsp.weight_kind().to_string()).to_uppercase()
+                };
+                writeln!(
+                    writer,
+                    "EDGE_WEIGHT_TYPE: {}",
+                    weight_kind
+                )?;
+            }
+            if tsp.weight_format() != WeightFormat::Undefined {
+                writeln!(
+                    writer,
+                    "EDGE_WEIGHT_FORMAT: {}",
+                    camel_to_snake(tsp.weight_format().to_string()).to_uppercase()
+                )?;
+            }
+            if let EdgeFormat::Undefined = tsp.edge_format() {}
+            else {
+                writeln!(
+                    writer,
+                    "EDGE_DATA_FORMAT: {}",
+                    camel_to_snake(tsp.edge_format().to_string()).to_uppercase()
+                )?;
+            }
+            if tsp.coord_kind() != CoordKind::Undefined {
+                let coord_kind = match tsp.coord_kind() {
+                    CoordKind::Coord2d => "TWOD_COORDS",
+                    CoordKind::Coord3d => "THREED_COORDS",
+                    CoordKind::NoCoord => "NO_COORDS",
+                    _ => ""
+                };
+                writeln!(
+                    writer,
+                    "NODE_COORD_TYPE: {}",
+                    coord_kind
+                )?;
+            }
+            if tsp.disp_kind() != DisplayKind::Undefined {
+                let disp_kind = match tsp.disp_kind() {
+                    DisplayKind::DispCoo => "COORD_DISPLAY",
+                    DisplayKind::Disp2d => "TWOD_DISPLAY",
+                    DisplayKind::NoDisp => "NO_DISPLAY",
+                    _ => ""
+                };
+                writeln!(
+                    writer,
+                    "DISPLAY_DATA_TYPE: {}",
+                    disp_kind
+                )?;
+            }
 
             if tsp.coord_kind() != CoordKind::NoCoord {
                 let data = match tsp
@@ -1462,16 +1441,11 @@ impl TspSerializer {
                         return Err(ParseTspError::Other("error writing"));
                     }
                 };
-                match writeln!(writer, "NODE_COORD_SECTION: \n{}", data) {
-                    Ok(_) => (),
-                    _ => {
-                        return Err(ParseTspError::Other("Hello"));
-                    }
-                };
+                writeln!(writer, "NODE_COORD_SECTION: \n{}", data)?;
             }
 
             if tsp.kind() == TspKind::Cvrp {
-                match writeln!(
+                writeln!(
                     writer,
                     "DEPOT_SECTION: \n{}\n-1",
                     match tsp
@@ -1485,16 +1459,11 @@ impl TspSerializer {
                             return Err(ParseTspError::Other("error writing"));
                         }
                     }
-                ) {
-                    Ok(_) => (),
-                    _ => {
-                        return Err(ParseTspError::Other("Hello"));
-                    }
-                };
+                )?;
             }
 
             if tsp.kind() == TspKind::Cvrp {
-                match writeln!(
+                writeln!(
                     writer,
                     "DEMAND_SECTION: \n{}",
                     match tsp
@@ -1508,21 +1477,17 @@ impl TspSerializer {
                             return Err(ParseTspError::Other("error writing"));
                         }
                     }
-                ) {
-                    Ok(_) => (),
-                    _ => {
-                        return Err(ParseTspError::Other("Hello"));
-                    }
-                };
+                )?;
             }
-            match writeln!(writer, "EOF") {
-                Ok(_) => (),
-                _ => {
-                    return Err(ParseTspError::Other("Hello"));
-                }
-            };
+            writeln!(writer, "EOF")?;
             writer.flush()?;
-        }
+            IOResult::Ok(())
+        } {
+            Ok(_) => (),
+            Err(_) => {
+                return Err(ParseTspError::Other("Troubles writing the file"))
+            }
+        };
 
         if let Err(e) = is_ok {
             Err(e)
